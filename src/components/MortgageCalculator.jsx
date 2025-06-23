@@ -7,47 +7,59 @@ const MortgageCalculator = () => {
     downPayment: '',
     loanTerm: '',
     interestRate: '',
+    mortgageType: '',
   });
 
-  //[] represent the dynamic value
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const { homePrice, downPayment, loanTerm, interestRate, mortgageType } =
+      form;
+
     if (
-      !form.homePrice ||
-      !form.downPayment ||
-      !form.loanTerm ||
-      !form.interestRate ||
-      Number(form.homePrice) <= 0 ||
-      Number(form.loanTerm) <= 0 ||
-      Number(form.interestRate) <= 0
+      !homePrice ||
+      !downPayment ||
+      !loanTerm ||
+      !interestRate ||
+      !mortgageType ||
+      Number(homePrice) <= 0 ||
+      Number(loanTerm) <= 0 ||
+      Number(interestRate) <= 0
     ) {
       setMortageAnswer('Please fill out all fields with valid values.');
       return;
     }
 
-    const loanAmount = form.homePrice - form.downPayment;
-    const term = form.loanTerm;
-    const monthly = 12;
-    const interest = form.interestRate / 100;
+    const loanAmount = homePrice - downPayment;
+    const monthlyRate = interestRate / 100 / 12;
+    const numberOfPayments = loanTerm * 12;
 
-    const monthlyRate = interest / monthly;
-    const numberOfPayments = monthly * term;
+    let mortgage;
 
-    const mortgage =
-      (loanAmount * monthlyRate) /
-      (1 - Math.pow(1 + monthlyRate, -numberOfPayments));
+    if (mortgageType === 'interestOnly') {
+      mortgage = (loanAmount * monthlyRate).toFixed(2);
+    } else if (mortgageType === 'adjustable') {
+      const adjRate = (Number(interestRate) + 1) / 100 / 12;
+      mortgage = (
+        (loanAmount * adjRate) /
+        (1 - Math.pow(1 + adjRate, -numberOfPayments))
+      ).toFixed(2);
+    } else {
+      mortgage = (
+        (loanAmount * monthlyRate) /
+        (1 - Math.pow(1 + monthlyRate, -numberOfPayments))
+      ).toFixed(2);
+    }
 
-    const preciseMortgage = mortgage.toFixed(2);
-    setMortageAnswer('$' + preciseMortgage);
+    setMortageAnswer(`Monthly Payment: $${mortgage}`);
   };
 
   return (
-    <div className="flex flex-row ">
-      <div className=" w-1/2 min-h-screen flex items-center justify-center bg-gray-100">
+    <div className="flex flex-col md:flex-row">
+      <div className="md:w-1/2 min-h-screen flex items-center justify-center bg-gray-100">
         <form
           onSubmit={handleSubmit}
           className="bg-white p-8 rounded-2xl shadow-md w-80"
@@ -90,8 +102,21 @@ const MortgageCalculator = () => {
             name="interestRate"
             value={form.interestRate}
             onChange={handleChange}
-            className="w-full mb-6 p-2 border border-gray-300 rounded"
+            className="w-full mb-4 p-2 border border-gray-300 rounded"
           />
+
+          <label className="block mb-2 text-sm">Mortgage Type</label>
+          <select
+            name="mortgageType"
+            value={form.mortgageType}
+            onChange={handleChange}
+            className="w-full mb-6 p-2 border border-gray-300 rounded"
+          >
+            <option value="">Select type</option>
+            <option value="fixed">Fixed Rate</option>
+            <option value="adjustable">Adjustable Rate</option>
+            <option value="interestOnly">Interest-Only</option>
+          </select>
 
           <button
             type="submit"
@@ -102,13 +127,18 @@ const MortgageCalculator = () => {
         </form>
       </div>
 
-      <div className="w-1/2 flex flex-col justify-center">
-        <h1 className="text-2xl md:text-4xl font-bold text-center">
+      <div className="md:w-1/2 p-6 flex flex-col justify-center items-center text-center">
+        <h1 className="text-2xl md:text-4xl font-bold">
           Monthly Mortgage Breakdown
         </h1>
-        <h3 className="text-xl md:text-3xl mt-7 font-semibold text-center">
+        <h3 className="text-xl md:text-2xl mt-7 font-semibold text-blue-700">
           {mortgageAnswer}
         </h3>
+        {form.mortgageType === 'interestOnly' && (
+          <p className="text-sm text-gray-500 mt-2">
+            This estimate reflects interest-only payments.
+          </p>
+        )}
       </div>
     </div>
   );
